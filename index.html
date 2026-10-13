@@ -1,0 +1,236 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>My Vocabulary</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f6f5f1;color:#252525;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+header{padding:28px 20px 14px}
+h1{font-size:27px;margin:0}
+small{color:#888}
+main{padding:10px 20px 100px;max-width:600px;margin:auto}
+.card,.panel{background:white;border-radius:20px;padding:22px;margin:15px 0;box-shadow:0 3px 15px #00000008}
+.card{min-height:270px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:18px;cursor:pointer}
+.word{font-size:32px;font-weight:700}
+.example{font-size:17px;line-height:1.7}
+.answer{text-align:left;width:100%;line-height:1.8}
+button{background:#242424;color:white;border:0;border-radius:12px;padding:13px 17px;font-size:15px;cursor:pointer}
+button.secondary{background:#ecebe7;color:#333}
+input,textarea{width:100%;border:1px solid #ddd;border-radius:10px;padding:12px;margin:7px 0 12px;font-size:16px;font-family:inherit}
+textarea{min-height:65px}
+nav{position:fixed;bottom:0;left:0;width:100%;background:white;display:flex;justify-content:space-around;padding:12px;border-top:1px solid #eee}
+nav button{background:none;color:#555}
+.hidden{display:none}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row button{flex:1}
+.item{padding:14px;border-bottom:1px solid #eee;cursor:pointer}
+.label{font-size:13px;color:#777;margin-top:8px}
+</style>
+</head>
+<body>
+<header>
+<h1>My Vocabulary</h1>
+<small>Build your vocabulary, one word at a time.</small>
+</header>
+<main>
+<section id="home">
+<div class="panel">
+<h2>我的學習進度</h2>
+<p id="count"></p>
+<button onclick="show('review')">開始複習 →</button>
+</div>
+<div class="panel">
+<h3>快速新增</h3>
+<button onclick="show('add')">＋ 新增英文單字</button>
+</div>
+</section>
+
+<section id="review" class="hidden">
+<h2>單字複習</h2>
+<p id="progress"></p>
+<div class="card" onclick="flip()">
+<div id="front"></div>
+<div id="back" class="hidden"></div>
+<small>點擊卡片翻面</small>
+</div>
+<div class="row">
+<button class="secondary" onclick="rate(1)">忘記了</button>
+<button class="secondary" onclick="rate(3)">有點印象</button>
+<button onclick="rate(7)">記得</button>
+</div>
+</section>
+
+<section id="library" class="hidden">
+<h2>我的單字庫</h2>
+<input id="search" placeholder="搜尋英文單字" oninput="renderLibrary()">
+<div class="panel" id="words"></div>
+</section>
+
+<section id="add" class="hidden">
+<h2>新增／編輯單字</h2>
+<form onsubmit="saveWord(event)">
+<label>英文單字</label>
+<input id="w" required>
+<label>詞性</label>
+<input id="pos" placeholder="verb / noun / adjective">
+<label>英文例句</label>
+<textarea id="ex" required></textarea>
+<label>中文意思</label>
+<textarea id="meaning" required></textarea>
+<label>字首</label>
+<input id="prefix">
+<label>字根</label>
+<input id="root">
+<label>字尾</label>
+<input id="suffix">
+<label>延伸字詞</label>
+<textarea id="related"></textarea>
+<label>相似字詞</label>
+<textarea id="similar"></textarea>
+<label>常見搭配</label>
+<textarea id="collocation"></textarea>
+<button type="submit">儲存單字卡</button>
+</form>
+<div class="panel">
+<h3>備份資料</h3>
+<button onclick="backup()">匯出 JSON</button>
+<input type="file" accept=".json" onchange="restore(event)">
+</div>
+</section>
+</main>
+
+<nav>
+<button onclick="show('home')">首頁</button>
+<button onclick="show('review')">複習</button>
+<button onclick="show('library')">單字庫</button>
+<button onclick="show('add')">新增</button>
+</nav>
+
+<script>
+const KEY="my-vocabulary-v1";
+const starter=[
+{w:"acquire",pos:"verb",ex:"She acquired new skills through practice.",meaning:"獲得、習得",prefix:"ac-（朝向）",root:"quir（尋求、取得）",suffix:"無明確字尾",related:"acquisition, acquired",similar:"obtain, gain",collocation:"acquire skills"},
+{w:"eligible",pos:"adjective",ex:"She is eligible for the scholarship.",meaning:"符合資格的",prefix:"el-（源自 ex-）",root:"lig（選擇）",suffix:"-ible（能夠……的）",related:"eligibility, ineligible",similar:"qualified",collocation:"be eligible for"},
+{w:"candidate",pos:"noun",ex:"She is a strong candidate for the position.",meaning:"候選人、應徵者",prefix:"無明確字首",root:"candid（源自拉丁文「白色」）",suffix:"無需強行拆解",related:"candidacy",similar:"applicant, nominee",collocation:"candidate for a position"}
+];
+let data;
+try{data=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+if(!Array.isArray(data))data=starter.map(x=>({...x,due:0}));
+let queue=[],index=0,flipped=false;
+
+function persist(){
+localStorage.setItem(KEY,JSON.stringify(data));
+}
+function show(id){
+document.querySelectorAll("main section").forEach(x=>x.classList.add("hidden"));
+document.getElementById(id).classList.remove("hidden");
+if(id==="home")document.getElementById("count").textContent="已收錄 "+data.length+" 個單字";
+if(id==="library")renderLibrary();
+if(id==="review")startReview();
+}
+function startReview(){
+queue=data.filter(x=>(x.due||0)<=Date.now());
+index=0;
+renderCard();
+}
+function renderCard(){
+let f=document.getElementById("front"),b=document.getElementById("back");
+flipped=false;
+f.classList.remove("hidden");b.classList.add("hidden");
+document.getElementById("progress").textContent=queue.length?"第 "+(index+1)+" / "+queue.length+" 張":"今天沒有待複習單字";
+if(index>=queue.length){
+f.textContent="今日複習完成！";b.textContent="";return;
+}
+let x=queue[index];
+f.replaceChildren();
+let a=document.createElement("div");
+a.className="word";a.textContent=x.w;
+let p=document.createElement("small");p.textContent=x.pos||"";
+let e=document.createElement("div");
+e.className="example";e.textContent=x.ex||"";
+f.append(a,p,e);
+b.replaceChildren();
+let fields=[
+["中文意思",x.meaning],["字首",x.prefix],["字根",x.root],
+["字尾",x.suffix],["延伸字",x.related],
+["相似字",x.similar],["常見搭配",x.collocation]
+];
+let content=document.createElement("div");content.className="answer";
+fields.forEach(([label,value])=>{
+if(!value)return;
+let line=document.createElement("div");
+let strong=document.createElement("strong");
+strong.textContent=label+"：";
+line.append(strong,document.createTextNode(value));
+content.append(line);
+});
+b.append(content);
+}
+function flip(){
+if(index>=queue.length)return;
+flipped=!flipped;
+document.getElementById("front").classList.toggle("hidden",flipped);
+document.getElementById("back").classList.toggle("hidden",!flipped);
+}
+function rate(days){
+if(index>=queue.length)return;
+if(!flipped){flip();return;}
+let x=queue[index];
+let original=data.find(y=>y.w===x.w);
+if(original)original.due=Date.now()+days*86400000;
+persist();index++;renderCard();
+}
+function saveWord(event){
+event.preventDefault();
+let fields=["w","pos","ex","meaning","prefix","root","suffix","related","similar","collocation"];
+let x={due:0};
+fields.forEach(k=>x[k]=document.getElementById(k).value.trim());
+x.w=x.w.toLowerCase();
+let old=data.find(y=>y.w===x.w);
+if(old)x.due=old.due||0;
+data=data.filter(y=>y.w!==x.w);
+data.push(x);persist();
+event.target.reset();show("library");
+}
+function renderLibrary(){
+let q=document.getElementById("search").value.toLowerCase();
+let box=document.getElementById("words");box.replaceChildren();
+data.filter(x=>x.w.includes(q)||(x.meaning||"").includes(q)).sort((a,b)=>a.w.localeCompare(b.w)).forEach(x=>{
+let row=document.createElement("div");row.className="item";
+row.textContent=x.w+" — "+x.meaning;
+row.onclick=()=>editWord(x.w);
+box.append(row);
+});
+}
+function editWord(word){
+let x=data.find(y=>y.w===word);
+if(!x)return;
+show("add");
+["w","pos","ex","meaning","prefix","root","suffix","related","similar","collocation"].forEach(k=>document.getElementById(k).value=x[k]||"");
+}
+function backup(){
+let blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+let url=URL.createObjectURL(blob);
+let a=document.createElement("a");a.href=url;a.download="vocabulary-backup.json";a.click();
+setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function restore(event){
+let file=event.target.files[0];if(!file)return;
+let reader=new FileReader();
+reader.onload=()=>{
+try{
+let incoming=JSON.parse(reader.result);
+if(!Array.isArray(incoming)||!incoming.every(x=>typeof x.w==="string"))throw Error();
+if(!confirm("確定匯入並取代目前的單字庫嗎？"))return;
+data=incoming;persist();show("library");
+}catch(e){alert("檔案格式不正確");}
+};
+reader.readAsText(file);
+}
+show("home");
+</script>
+</body>
+</html>
