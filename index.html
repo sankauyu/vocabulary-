@@ -1,236 +1,60 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-Hant">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>My Vocabulary</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#f7f5f0"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="單字卡">
+<title>我的英文單字卡</title>
 <style>
-*{box-sizing:border-box}
-body{margin:0;background:#f6f5f1;color:#252525;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
-header{padding:28px 20px 14px}
-h1{font-size:27px;margin:0}
-small{color:#888}
-main{padding:10px 20px 100px;max-width:600px;margin:auto}
-.card,.panel{background:white;border-radius:20px;padding:22px;margin:15px 0;box-shadow:0 3px 15px #00000008}
-.card{min-height:270px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:18px;cursor:pointer}
-.word{font-size:32px;font-weight:700}
-.example{font-size:17px;line-height:1.7}
-.answer{text-align:left;width:100%;line-height:1.8}
-button{background:#242424;color:white;border:0;border-radius:12px;padding:13px 17px;font-size:15px;cursor:pointer}
-button.secondary{background:#ecebe7;color:#333}
-input,textarea{width:100%;border:1px solid #ddd;border-radius:10px;padding:12px;margin:7px 0 12px;font-size:16px;font-family:inherit}
-textarea{min-height:65px}
-nav{position:fixed;bottom:0;left:0;width:100%;background:white;display:flex;justify-content:space-around;padding:12px;border-top:1px solid #eee}
-nav button{background:none;color:#555}
-.hidden{display:none}
-.row{display:flex;gap:8px;flex-wrap:wrap}
-.row button{flex:1}
-.item{padding:14px;border-bottom:1px solid #eee;cursor:pointer}
-.label{font-size:13px;color:#777;margin-top:8px}
+:root{font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC",sans-serif;color:#242824;background:#f7f5f0}*{box-sizing:border-box}body{margin:0}main{max-width:640px;margin:auto;padding:22px 17px 90px}h1{font-size:25px;margin:8px 0 5px}h2{font-size:18px}p{line-height:1.65}.muted{color:#747a73;font-size:13px}.bar{display:flex;align-items:center;justify-content:space-between;gap:12px}.pill{border-radius:30px;background:#e5eae2;padding:6px 11px;font-size:12px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:23px 0}.stat{background:white;border-radius:16px;padding:15px 9px;text-align:center}.stat b{font-size:24px;display:block}.stat small{font-size:11px;color:#777}.panel{background:white;border:1px solid #e7e7e2;border-radius:19px;padding:18px;margin:15px 0;box-shadow:0 3px 16px #33333306}.btn{border:0;border-radius:13px;background:#253f33;color:white;padding:13px 17px;font-size:15px;font-weight:600;cursor:pointer}.btn.secondary{background:#e8ede8;color:#253f33}.btn.light{background:#f3f4f0;color:#3b463d}.btn.danger{background:#fce9e7;color:#a33229}.btn:disabled{opacity:.45}.actions{display:flex;gap:8px;flex-wrap:wrap}.actions>*{flex:1}input,textarea,select{width:100%;font:inherit;border:1px solid #d9ded8;border-radius:12px;padding:12px;margin:5px 0 13px;background:white;color:#222}textarea{min-height:68px;resize:vertical}label{font-size:13px;font-weight:600;display:block}.card{min-height:265px;background:#edf1eb;border-radius:19px;padding:26px 18px;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;gap:15px;cursor:pointer;white-space:pre-wrap}.card h2{font-size:32px;margin:0;overflow-wrap:anywhere}.card .sentence{font-size:17px;line-height:1.7}.back{width:100%;text-align:left;font-size:14px;line-height:1.7}.back h2{text-align:center;font-size:23px}.back div{padding:6px 0;border-bottom:1px solid #dbe3d8}.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 0;border-bottom:1px solid #eee}.row:last-child{border-bottom:0}.row .name{font-weight:700}.row .sub{font-size:12px;color:#7c827c}.row button{padding:9px 11px}.tabs{position:fixed;bottom:0;left:0;right:0;display:flex;background:#fff;border-top:1px solid #e6e6e1;padding:9px max(12px,env(safe-area-inset-right)) calc(9px + env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));justify-content:center;z-index:3}.tabs button{flex:1;max-width:160px;border:0;background:transparent;padding:9px 4px;font-size:12px;color:#798178}.tabs button.active{color:#253f33;font-weight:800}.hidden{display:none!important}.empty{text-align:center;padding:34px 12px;color:#777}.hint{font-size:12px;color:#767d76}#toast{position:fixed;top:15px;left:50%;transform:translateX(-50%);background:#243d31;color:white;padding:12px 20px;border-radius:12px;z-index:9;display:none;max-width:90%;text-align:center}button{touch-action:manipulation}
 </style>
 </head>
-<body>
-<header>
-<h1>My Vocabulary</h1>
-<small>Build your vocabulary, one word at a time.</small>
-</header>
-<main>
+<body><div id="toast" role="status"></div><main>
+<header class="bar"><div><div class="muted">MY VOCABULARY</div><h1>我的英文單字卡</h1></div><span class="pill">私人本機版</span></header>
 <section id="home">
-<div class="panel">
-<h2>我的學習進度</h2>
-<p id="count"></p>
-<button onclick="show('review')">開始複習 →</button>
-</div>
-<div class="panel">
-<h3>快速新增</h3>
-<button onclick="show('add')">＋ 新增英文單字</button>
-</div>
+<p class="muted">每天一點點，累積自己的英文詞彙。</p><div class="stats"><div class="stat"><b id="total">0</b><small>累積單字</small></div><div class="stat"><b id="due">0</b><small>待複習</small></div><div class="stat"><b id="mastered">0</b><small>熟悉單字</small></div></div>
+<div class="panel"><h2>今天的複習</h2><p class="muted" id="homeHint"></p><button class="btn" onclick="startReview()">開始翻卡複習 →</button></div>
+<div class="panel"><h2>新增單字</h2><p class="muted">保留例句、字首字根字尾及延伸字等完整欄位。</p><button class="btn secondary" onclick="showEditor()">＋ 新增單字卡</button></div>
 </section>
-
-<section id="review" class="hidden">
-<h2>單字複習</h2>
-<p id="progress"></p>
-<div class="card" onclick="flip()">
-<div id="front"></div>
-<div id="back" class="hidden"></div>
-<small>點擊卡片翻面</small>
-</div>
-<div class="row">
-<button class="secondary" onclick="rate(1)">忘記了</button>
-<button class="secondary" onclick="rate(3)">有點印象</button>
-<button onclick="rate(7)">記得</button>
-</div>
-</section>
-
-<section id="library" class="hidden">
-<h2>我的單字庫</h2>
-<input id="search" placeholder="搜尋英文單字" oninput="renderLibrary()">
-<div class="panel" id="words"></div>
-</section>
-
-<section id="add" class="hidden">
-<h2>新增／編輯單字</h2>
-<form onsubmit="saveWord(event)">
-<label>英文單字</label>
-<input id="w" required>
-<label>詞性</label>
-<input id="pos" placeholder="verb / noun / adjective">
-<label>英文例句</label>
-<textarea id="ex" required></textarea>
-<label>中文意思</label>
-<textarea id="meaning" required></textarea>
-<label>字首</label>
-<input id="prefix">
-<label>字根</label>
-<input id="root">
-<label>字尾</label>
-<input id="suffix">
-<label>延伸字詞</label>
-<textarea id="related"></textarea>
-<label>相似字詞</label>
-<textarea id="similar"></textarea>
-<label>常見搭配</label>
-<textarea id="collocation"></textarea>
-<button type="submit">儲存單字卡</button>
-</form>
-<div class="panel">
-<h3>備份資料</h3>
-<button onclick="backup()">匯出 JSON</button>
-<input type="file" accept=".json" onchange="restore(event)">
-</div>
-</section>
-</main>
-
-<nav>
-<button onclick="show('home')">首頁</button>
-<button onclick="show('review')">複習</button>
-<button onclick="show('library')">單字庫</button>
-<button onclick="show('add')">新增</button>
-</nav>
-
+<section id="review" class="hidden"><div class="bar"><h2>翻卡複習</h2><span class="pill" id="progress"></span></div><div id="flashcard" class="card" tabindex="0" role="button" aria-label="點擊翻面" onclick="flipCard()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();flipCard()}"></div><p class="muted" style="text-align:center">點擊卡片翻面</p><div class="actions hidden" id="ratings"><button class="btn danger" onclick="rate(0)">忘記了</button><button class="btn secondary" onclick="rate(1)">有點印象</button><button class="btn" onclick="rate(2)">記得</button></div><div class="panel"><div class="bar"><span class="muted">複習模式</span><button class="btn light" onclick="startReview(true)">重新開始全部</button></div></div></section>
+<section id="library" class="hidden"><div class="bar"><h2>單字庫</h2><button class="btn" onclick="showEditor()">＋ 新增</button></div><input id="search" placeholder="搜尋英文、中文或標籤" oninput="renderLibrary()"><div id="wordList" class="panel"></div></section>
+<section id="settings" class="hidden"><h2>資料備份與匯入</h2><div class="panel"><p>資料儲存在這台裝置的瀏覽器。更換手機、清除網站資料或使用無痕模式可能導致遺失，請定期匯出備份。</p><button class="btn" onclick="exportData()">下載 JSON 備份</button><p class="hint">可將備份檔存到 iPhone「檔案」或 iCloud Drive。</p><label>匯入 JSON 備份（合併同名單字）</label><input type="file" id="importFile" accept=".json,application/json" onchange="importData(event)"><p class="hint">匯入會以檔案中的同名單字覆蓋本機卡片，請先備份。</p></div><div class="panel"><h2>使用說明</h2><p class="muted">免費、無帳號、無 API。第一次載入包含 9 張示範單字卡。此版本需網路開啟網站，不保證離線可用；新增單字時解析欄位由你填寫或貼上 ChatGPT 整理的內容。</p></div></section>
+<section id="editor" class="hidden"><div class="bar"><h2 id="editorTitle">新增單字卡</h2><button class="btn light" onclick="go('library')">返回</button></div><form id="wordForm" onsubmit="saveWord(event)"><input type="hidden" id="original"><label>英文單字 *</label><input id="word" required autocapitalize="off"><label>詞性</label><input id="pos" placeholder="verb / noun / adjective"><label>英文例句（卡片正面）</label><textarea id="example" placeholder="She acquired new skills through practice."></textarea><label>中文意思</label><textarea id="meaning"></textarea><label>字首</label><input id="prefix"><label>字根</label><input id="root"><label>字尾</label><input id="suffix"><label>延伸字詞</label><textarea id="related"></textarea><label>相似字詞</label><textarea id="similar"></textarea><label>常見搭配</label><textarea id="collocation"></textarea><label>分類標籤</label><input id="tags" placeholder="多益, 閱讀"><div class="actions"><button class="btn" type="submit">儲存單字卡</button><button class="btn danger hidden" id="deleteBtn" type="button" onclick="deleteWord()">刪除</button></div></form></section>
+</main><nav class="tabs"><button data-tab="home" class="active" onclick="go('home')">⌂<br>首頁</button><button data-tab="review" onclick="go('review')">▤<br>翻卡</button><button data-tab="library" onclick="go('library')">▦<br>單字庫</button><button data-tab="settings" onclick="go('settings')">⚙<br>備份</button></nav>
 <script>
-const KEY="my-vocabulary-v1";
-const starter=[
-{w:"acquire",pos:"verb",ex:"She acquired new skills through practice.",meaning:"獲得、習得",prefix:"ac-（朝向）",root:"quir（尋求、取得）",suffix:"無明確字尾",related:"acquisition, acquired",similar:"obtain, gain",collocation:"acquire skills"},
-{w:"eligible",pos:"adjective",ex:"She is eligible for the scholarship.",meaning:"符合資格的",prefix:"el-（源自 ex-）",root:"lig（選擇）",suffix:"-ible（能夠……的）",related:"eligibility, ineligible",similar:"qualified",collocation:"be eligible for"},
-{w:"candidate",pos:"noun",ex:"She is a strong candidate for the position.",meaning:"候選人、應徵者",prefix:"無明確字首",root:"candid（源自拉丁文「白色」）",suffix:"無需強行拆解",related:"candidacy",similar:"applicant, nominee",collocation:"candidate for a position"}
+'use strict';
+const KEY='my-vocabulary-v1';
+const seeds=[
+['requirement','noun','Proficiency in Adobe software is a requirement of this job.','要求；必要條件','re-（再次、向後；歷史構詞）','quir（尋求、要求）','-ment（名詞字尾）','require, required','condition, prerequisite','meet the requirements'],
+['inquire','verb','She inquired about the application process.','詢問；打聽','in-（向內）','quir（尋求、詢問）','無明確字尾','inquiry, inquisitive','ask, investigate','inquire about'],
+['acquire','verb','She acquired new skills through practice.','獲得；習得','ac-（ad- 的變體，朝向）','quir（尋求、取得）','無明確字尾','acquisition, acquired','obtain, gain','acquire skills'],
+['qualified','adjective','She is qualified for the position.','符合資格的；合格的','無明確字首','qual（性質、品質）','-ify（使成為）＋ -ed','qualify, qualification','eligible, competent','be qualified for'],
+['candidate','noun','She is a strong candidate for the position.','候選人；應徵者','無明確字首','candid（源自拉丁文「白色」）','無適合直接拆解的現代英語字尾','candidacy','applicant, nominee','candidate for'],
+['reference','noun','She asked her professor for a reference.','推薦信；參考資料','re-（向後）','fer（帶、攜）','-ence（名詞字尾）','refer, referral','recommendation, citation','provide a reference'],
+['impressed','adjective','I was impressed by her presentation.','印象深刻的','im-（in- 的變體，進入）','press（壓）','-ed（過去分詞字尾）','impress, impression, impressive','amazed, struck','be impressed by'],
+['eligible','adjective','She is eligible for the scholarship.','符合資格的；有資格的','源自拉丁文 e-/ex-（向外）','lig（選擇）','-ible（能夠……的）','eligibility, ineligible','qualified, entitled','be eligible for'],
+['identify','verb','We need to identify potential risks before making decisions.','辨認；識別；確認','無明確字首','ident（相同、身分）','-ify（使成為）','identity, identification','recognize, determine','identify risks']
 ];
-let data;
-try{data=JSON.parse(localStorage.getItem(KEY))}catch(e){}
-if(!Array.isArray(data))data=starter.map(x=>({...x,due:0}));
-let queue=[],index=0,flipped=false;
-
-function persist(){
-localStorage.setItem(KEY,JSON.stringify(data));
-}
-function show(id){
-document.querySelectorAll("main section").forEach(x=>x.classList.add("hidden"));
-document.getElementById(id).classList.remove("hidden");
-if(id==="home")document.getElementById("count").textContent="已收錄 "+data.length+" 個單字";
-if(id==="library")renderLibrary();
-if(id==="review")startReview();
-}
-function startReview(){
-queue=data.filter(x=>(x.due||0)<=Date.now());
-index=0;
-renderCard();
-}
-function renderCard(){
-let f=document.getElementById("front"),b=document.getElementById("back");
-flipped=false;
-f.classList.remove("hidden");b.classList.add("hidden");
-document.getElementById("progress").textContent=queue.length?"第 "+(index+1)+" / "+queue.length+" 張":"今天沒有待複習單字";
-if(index>=queue.length){
-f.textContent="今日複習完成！";b.textContent="";return;
-}
-let x=queue[index];
-f.replaceChildren();
-let a=document.createElement("div");
-a.className="word";a.textContent=x.w;
-let p=document.createElement("small");p.textContent=x.pos||"";
-let e=document.createElement("div");
-e.className="example";e.textContent=x.ex||"";
-f.append(a,p,e);
-b.replaceChildren();
-let fields=[
-["中文意思",x.meaning],["字首",x.prefix],["字根",x.root],
-["字尾",x.suffix],["延伸字",x.related],
-["相似字",x.similar],["常見搭配",x.collocation]
-];
-let content=document.createElement("div");content.className="answer";
-fields.forEach(([label,value])=>{
-if(!value)return;
-let line=document.createElement("div");
-let strong=document.createElement("strong");
-strong.textContent=label+"：";
-line.append(strong,document.createTextNode(value));
-content.append(line);
-});
-b.append(content);
-}
-function flip(){
-if(index>=queue.length)return;
-flipped=!flipped;
-document.getElementById("front").classList.toggle("hidden",flipped);
-document.getElementById("back").classList.toggle("hidden",!flipped);
-}
-function rate(days){
-if(index>=queue.length)return;
-if(!flipped){flip();return;}
-let x=queue[index];
-let original=data.find(y=>y.w===x.w);
-if(original)original.due=Date.now()+days*86400000;
-persist();index++;renderCard();
-}
-function saveWord(event){
-event.preventDefault();
-let fields=["w","pos","ex","meaning","prefix","root","suffix","related","similar","collocation"];
-let x={due:0};
-fields.forEach(k=>x[k]=document.getElementById(k).value.trim());
-x.w=x.w.toLowerCase();
-let old=data.find(y=>y.w===x.w);
-if(old)x.due=old.due||0;
-data=data.filter(y=>y.w!==x.w);
-data.push(x);persist();
-event.target.reset();show("library");
-}
-function renderLibrary(){
-let q=document.getElementById("search").value.toLowerCase();
-let box=document.getElementById("words");box.replaceChildren();
-data.filter(x=>x.w.includes(q)||(x.meaning||"").includes(q)).sort((a,b)=>a.w.localeCompare(b.w)).forEach(x=>{
-let row=document.createElement("div");row.className="item";
-row.textContent=x.w+" — "+x.meaning;
-row.onclick=()=>editWord(x.w);
-box.append(row);
-});
-}
-function editWord(word){
-let x=data.find(y=>y.w===word);
-if(!x)return;
-show("add");
-["w","pos","ex","meaning","prefix","root","suffix","related","similar","collocation"].forEach(k=>document.getElementById(k).value=x[k]||"");
-}
-function backup(){
-let blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
-let url=URL.createObjectURL(blob);
-let a=document.createElement("a");a.href=url;a.download="vocabulary-backup.json";a.click();
-setTimeout(()=>URL.revokeObjectURL(url),1000);
-}
-function restore(event){
-let file=event.target.files[0];if(!file)return;
-let reader=new FileReader();
-reader.onload=()=>{
-try{
-let incoming=JSON.parse(reader.result);
-if(!Array.isArray(incoming)||!incoming.every(x=>typeof x.w==="string"))throw Error();
-if(!confirm("確定匯入並取代目前的單字庫嗎？"))return;
-data=incoming;persist();show("library");
-}catch(e){alert("檔案格式不正確");}
-};
-reader.readAsText(file);
-}
-show("home");
-</script>
-</body>
-</html>
+function seedWords(){return seeds.map(a=>({word:a[0],pos:a[1],example:a[2],meaning:a[3],prefix:a[4],root:a[5],suffix:a[6],related:a[7],similar:a[8],collocation:a[9],tags:'多益',due:0,interval:0,level:0}));}
+function load(){try{let v=localStorage.getItem(KEY);if(v!==null){let p=JSON.parse(v);return Array.isArray(p)?p:seedWords();}}catch(e){alert('無法讀取已儲存資料，請勿繼續新增或覆蓋。請先檢查瀏覽器儲存空間。');}return seedWords();}
+let words=load(),queue=[],cursor=0,flipped=false;
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(words));return true}catch(e){alert('儲存失敗：請確認 Safari 儲存空間，並匯出備份。');return false}}
+if(localStorage.getItem(KEY)===null)persist();
+function toast(s){let el=document.getElementById('toast');el.textContent=s;el.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>el.style.display='none',2200)}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function today(){let d=new Date();return new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime()}
+function dueWords(){return words.filter(w=>!w.due||w.due<=today())}
+function renderHome(){document.getElementById('total').textContent=words.length;document.getElementById('due').textContent=dueWords().length;document.getElementById('mastered').textContent=words.filter(w=>w.level>=3).length;document.getElementById('homeHint').textContent=dueWords().length?`目前有 ${dueWords().length} 張單字卡可以複習。`:'今天已經複習完畢，明天再回來看看。'}
+function go(id){for(let s of document.querySelectorAll('main section'))s.classList.add('hidden');document.getElementById(id).classList.remove('hidden');document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===id));if(id==='home')renderHome();if(id==='library')renderLibrary();if(id==='review')startReview();scrollTo(0,0)}
+function startReview(all=false){queue=(all?words:dueWords()).map(w=>w.word);cursor=0;flipped=false;renderCard();if(document.getElementById('review').classList.contains('hidden'))goReviewOnly()}
+function goReviewOnly(){for(let s of document.querySelectorAll('main section'))s.classList.add('hidden');document.getElementById('review').classList.remove('hidden');document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab==='review'))}
+function renderCard(){let el=document.getElementById('flashcard'),r=document.getElementById('ratings');r.classList.add('hidden');document.getElementById('progress').textContent=`${Math.min(cursor+1,queue.length)} / ${queue.length}`;if(cursor>=queue.length){el.innerHTML='<h2>本輪複習完成 ✓</h2><p>可以回首頁或重新開始全部複習。</p>';return}let w=words.find(x=>x.word===queue[cursor]);if(!w){cursor++;renderCard();return}if(!flipped){el.innerHTML=`<div class="muted">FRONT · 正面</div><h2>${esc(w.word)}</h2><div class="muted">${esc(w.pos)}</div><div class="sentence">${esc(w.example||'尚未填寫例句')}</div>`}else{el.innerHTML=`<div class="back"><div class="muted" style="text-align:center">BACK · 背面</div><h2>${esc(w.meaning||'尚未填寫中文意思')}</h2>${[['字首',w.prefix],['字根',w.root],['字尾',w.suffix],['延伸字詞',w.related],['相似字詞',w.similar],['常見搭配',w.collocation]].map(([k,v])=>`<div><b>${k}：</b>${esc(v||'未填寫')}</div>`).join('')}</div>`;r.classList.remove('hidden')}}
+function flipCard(){if(cursor>=queue.length)return;flipped=!flipped;renderCard()}
+function rate(n){if(!flipped||cursor>=queue.length)return;let w=words.find(x=>x.word===queue[cursor]);if(!w)return;let old={...w};let days;if(n===0){w.level=0;days=0;w.due=Date.now()+10*60*1000}else if(n===1){w.level=Math.max(1,(w.level||0));days=1;w.due=today()+86400000}else{w.level=(w.level||0)+1;days=[1,3,7,14,30,60,120][Math.min(w.level-1,6)];w.due=today()+days*86400000}w.interval=days;if(!persist()){Object.assign(w,old);return}cursor++;flipped=false;renderCard();renderHome()}
+function renderLibrary(){let q=document.getElementById('search').value.trim().toLowerCase();let list=words.filter(w=>[w.word,w.meaning,w.tags].some(v=>String(v||'').toLowerCase().includes(q))).sort((a,b)=>a.word.localeCompare(b.word));document.getElementById('wordList').innerHTML=list.length?list.map(w=>`<div class="row"><div><div class="name">${esc(w.word)}</div><div class="sub">${esc(w.meaning)} · ${esc(w.tags||'未分類')}</div></div><button class="btn secondary" data-edit="${esc(w.word)}">編輯</button></div>`).join(''):'<div class="empty">找不到符合的單字</div>';document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>showEditor(b.dataset.edit))}
+const fields=['word','pos','example','meaning','prefix','root','suffix','related','similar','collocation','tags'];
+function showEditor(name=''){let w=words.find(x=>x.word===name);document.getElementById('editorTitle').textContent=w?'編輯單字卡':'新增單字卡';document.getElementById('original').value=w?.word||'';fields.forEach(k=>document.getElementById(k).value=w?.[k]||'');document.getElementById('deleteBtn').classList.toggle('hidden',!w);go('editor')}
+function saveWord(e){e.preventDefault();let data={};fields.forEach(k=>data[k]=document.getElementById(k).value.trim());data.word=data.word.toLowerCase();if(!data.word)return;let original=document.getElementById('original').value;let existing=words.find(x=>x.word===data.word&&x.word!==original);if(existing&&!confirm('這個單字已存在，是否覆蓋其內容？'))return;let old=words.map(w=>({...w}));let oldWord=words.find(x=>x.word===original);data={...data,due:oldWord?.due||0,interval:oldWord?.interval||0,level:oldWord?.level||0};words=words.filter(w=>w.word!==original&&w.word!==data.word);words.push(data);if(!persist()){words=old;return}toast('已儲存單字卡');go('library')}
+function deleteWord(){let key=document.getElementById('original').value;if(!confirm(`確定刪除 ${key} 嗎？`))return;let old=words;words=words.filter(w=>w.word!==key);if(!persist()){words=old;return}go('library')}
+function exportData(){let blob=new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),words},null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='my-vocabulary-backup-'+new Date().toISOString().slice(0,10)+'.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000)}
+async function importData(e){let f=e.target.files?.[0];if(!f)return;try{let obj=JSON.parse(await f.text()),arr=Array.isArray(obj)?obj:obj.words;if(!Array.isArray(arr)||arr.length>10000||!arr.every(w=>w&&typeof w.word==='string'&&w.word.trim()&&w.word.length<150))throw Error('檔案格式不正確');if(!confirm(`準備匯入 ${arr.length} 張單字卡，同名單字會覆蓋。要繼續嗎？`))return;let old=words;let map=new Map(words.map(w=>[w.word,w]));for(let raw of arr){let w={};for(let k of fields)w[k]=typeof raw[k]==='string'?raw[k].slice(0,10000):'';w.word=w.word.trim().toLowerCase();w.due=Number.isFinite(raw.due)?raw.due:0;w.level=Number.isFinite(raw.level)?raw.level:0;w.interval=Number.isFinite(raw.interval)?raw.interval:0;map.set(w.word,w)}words=[...map.values()];if(!persist()){words=old;return}toast(`成功匯入 ${arr.length} 張`);renderHome()}catch(err){alert('匯入失敗：'+err.message)}finally{e.target.value=''}}
+renderHome();
+</script></body></html>
