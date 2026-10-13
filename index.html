@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f6f5f1"><meta name="apple-mobile-web-app-capable" content="yes">
+<title>My Vocabulary</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f6f5f1;color:#252525;font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC",sans-serif}header{padding:28px 20px 14px;max-width:640px;margin:auto}h1{font-size:27px;margin:0}small,.muted{color:#777}main{padding:10px 20px 110px;max-width:640px;margin:auto}.card,.panel{background:#fff;border-radius:20px;padding:22px;margin:15px 0;box-shadow:0 3px 15px #00000008}.card{min-height:290px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:18px;cursor:pointer}.word{font-size:32px;font-weight:700;overflow-wrap:anywhere}.example{font-size:17px;line-height:1.7}.answer{text-align:left;width:100%;line-height:1.8;overflow-wrap:anywhere}.answer div{margin-bottom:7px}button{background:#242424;color:#fff;border:0;border-radius:12px;padding:13px 17px;font-size:15px;cursor:pointer}button.secondary{background:#ecebe7;color:#333}button:disabled{opacity:.45}input,textarea{width:100%;border:1px solid #ddd;border-radius:10px;padding:12px;margin:7px 0 12px;font-size:16px;font-family:inherit}input[type=file]{padding:10px;font-size:14px}textarea{min-height:65px}nav{position:fixed;bottom:0;left:0;width:100%;background:#fff;display:flex;justify-content:space-around;padding:12px 8px calc(12px + env(safe-area-inset-bottom));border-top:1px solid #eee}nav button{background:none;color:#555;padding:10px}.hidden{display:none!important}.row{display:flex;gap:8px;flex-wrap:wrap}.row button{flex:1}.item{padding:14px 0;border-bottom:1px solid #eee;cursor:pointer}.item:last-child{border-bottom:0}.item strong{display:block;margin-bottom:4px}.label{font-size:13px;color:#777;margin-top:8px}.notice{background:#f1f4ed;border-radius:12px;padding:12px;line-height:1.6;font-size:14px}.danger{color:#a32d2d}h2{font-size:20px}h3{font-size:17px}
+</style>
+</head>
+<body>
+<header><h1>My Vocabulary</h1><small>Build your vocabulary, one word at a time.</small></header>
+<main>
+<section id="home">
+<div class="panel"><h2>我的學習進度</h2><p id="count"></p><p id="dueCount" class="muted"></p><button onclick="show('review')">開始複習 →</button></div>
+
+</section>
+<section id="review" class="hidden"><h2>單字複習</h2><p id="progress" class="muted"></p><div class="card" onclick="flip()"><div id="front"></div><div id="back" class="hidden"></div><small>點擊卡片翻面</small></div><div class="row" id="reviewActions"><button class="secondary" onclick="rate(1)">忘記了</button><button class="secondary" onclick="rate(3)">有點印象</button><button onclick="rate(7)">記得</button></div></section>
+<section id="library" class="hidden"><h2>我的單字庫</h2><input id="search" placeholder="搜尋英文或中文" oninput="renderLibrary()"><div class="panel" id="words"></div></section>
+<section id="add" class="hidden"><h2>新增／編輯單字</h2><form id="wordForm" onsubmit="saveWord(event)"><label>英文單字</label><input id="w" required><label>詞性</label><input id="pos" placeholder="verb / noun / adjective"><label>英文例句</label><textarea id="ex" required></textarea><label>中文意思</label><textarea id="meaning" required></textarea><label>字首</label><input id="prefix"><label>字根</label><input id="root"><label>字尾</label><input id="suffix"><label>延伸字詞</label><textarea id="related"></textarea><label>相似字詞</label><textarea id="similar"></textarea><label>常見搭配</label><textarea id="collocation"></textarea><button type="submit">儲存單字卡</button></form>
+<div class="panel"><h3>批次匯入 JSON</h3><p class="notice">匯入會新增尚未收錄的單字，重複單字會略過；不會清空舊單字或複習進度。</p><input id="importFile" type="file" accept=".json,application/json" onchange="importWords(event)"><p id="importStatus" aria-live="polite"></p></div>
+<div class="panel"><h3>修復缺少的單字與例句</h3><p class="notice">如果單字卡只顯示詞性，請選擇你之前下載的完整備份 JSON。程式會用中文意思等欄位比對並補回英文單字與例句，盡量保留目前的複習進度；不會刪除現有單字。</p><input id="repairFile" type="file" accept=".json,application/json" onchange="repairWords(event)"><p id="repairStatus" aria-live="polite"></p></div><div class="panel"><h3>備份與還原</h3><p class="muted">建議定期匯出完整備份。單字只儲存在目前這個瀏覽器／主畫面 App 中，沒有雲端同步。</p><button onclick="backup()">匯出完整 JSON 備份</button><p class="label">還原備份（會取代整個單字庫，請謹慎使用）</p><input id="restoreFile" type="file" accept=".json,application/json" onchange="restore(event)"></div>
+</section>
+</main>
+<nav><button onclick="show('home')">首頁</button><button onclick="show('review')">複習</button><button onclick="show('library')">單字庫</button><button onclick="show('add')">新增／匯入</button></nav>
+<script>
+'use strict';
+const KEY='my-vocabulary-v1';
+const starter=[
+{w:'acquire',pos:'verb',ex:'She acquired new skills through practice.',meaning:'獲得、習得',prefix:'ac-（朝向）',root:'quir（尋求、取得）',suffix:'無明確字尾',related:'acquisition, acquired',similar:'obtain, gain',collocation:'acquire skills'},
+{w:'eligible',pos:'adjective',ex:'She is eligible for the scholarship.',meaning:'符合資格的',prefix:'el-（源自 ex-）',root:'lig（選擇）',suffix:'-ible（能夠……的）',related:'eligibility, ineligible',similar:'qualified',collocation:'be eligible for'},
+{w:'candidate',pos:'noun',ex:'She is a strong candidate for the position.',meaning:'候選人、應徵者',prefix:'無明確字首',root:'candid（源自拉丁文「白色」）',suffix:'無需強行拆解',related:'candidacy',similar:'applicant, nominee',collocation:'candidate for a position'}
+];
+const fields=['w','pos','ex','meaning','prefix','root','suffix','related','similar','collocation'];
+let data;
+try{const saved=localStorage.getItem(KEY);data=saved===null?starter.map(x=>({...x,due:0})):JSON.parse(saved)}catch(e){data=starter.map(x=>({...x,due:0}))}
+if(!Array.isArray(data))data=starter.map(x=>({...x,due:0}));
+// Support both the original word/example backup format and the newer w/ex format.
+// Keep the original properties and review metadata intact.
+function compatibleCard(x){const word=String(x.word||x.w||'').trim();const example=String(x.example||x.ex||'').trim();return {...x,w:word,ex:example,word,example}}
+data=data.map(compatibleCard);
+
+let queue=[],index=0,flipped=false,editingKey=null;
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(data));return true}catch(e){alert('儲存失敗：請檢查瀏覽器儲存空間，並先備份資料。');return false}}
+function normalize(word){return String(word||'').trim().toLocaleLowerCase()}
+function show(id){document.querySelectorAll('main section').forEach(x=>x.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');if(id==='home'){document.getElementById('count').textContent='已收錄 '+data.length+' 個單字';document.getElementById('dueCount').textContent='目前待複習 '+data.filter(x=>(Number(x.due)||0)<=Date.now()).length+' 個單字'}if(id==='library')renderLibrary();if(id==='review')startReview();window.scrollTo(0,0)}
+function startReview(){queue=data.filter(x=>(Number(x.due)||0)<=Date.now());index=0;renderCard()}
+function renderCard(){const f=document.getElementById('front'),b=document.getElementById('back');flipped=false;f.classList.remove('hidden');b.classList.add('hidden');f.replaceChildren();b.replaceChildren();document.getElementById('progress').textContent=index<queue.length?'第 '+(index+1)+' / '+queue.length+' 張':'今天沒有更多待複習單字';document.getElementById('reviewActions').classList.toggle('hidden',index>=queue.length);if(index>=queue.length){f.textContent='今日複習完成！';return}const x=compatibleCard(queue[index]);const a=document.createElement('div');a.className='word';a.textContent=x.w;const p=document.createElement('small');p.textContent=x.pos||'';const e=document.createElement('div');e.className='example';e.textContent=x.ex||'';f.append(a,p,e);const content=document.createElement('div');content.className='answer';[['中文意思',x.meaning],['字首',x.prefix],['字根',x.root],['字尾',x.suffix],['延伸字詞',x.related],['相似字詞',x.similar],['常見搭配',x.collocation]].forEach(([label,value])=>{if(!value)return;const line=document.createElement('div'),strong=document.createElement('strong');strong.textContent=label+'：';line.append(strong,document.createTextNode(value));content.append(line)});b.append(content)}
+function flip(){if(index>=queue.length)return;flipped=!flipped;document.getElementById('front').classList.toggle('hidden',flipped);document.getElementById('back').classList.toggle('hidden',!flipped);document.getElementById('reviewActions').classList.toggle('hidden',flipped)}
+function rate(days){if(index>=queue.length)return;const x=queue[index],original=data.find(y=>normalize(y.w)===normalize(x.w));if(original)original.due=Date.now()+days*86400000;persist();index++;renderCard()}
+function saveWord(event){event.preventDefault();const x={due:0};fields.forEach(k=>x[k]=document.getElementById(k).value.trim());x.w=normalize(x.w);const existing=data.find(y=>normalize(y.w)===normalize(editingKey||x.w));if(existing){x.due=Number(existing.due)||0;Object.assign(existing,x,{word:x.w,example:x.ex})}else data.push(x);if(!persist())return;editingKey=null;event.target.reset();show('library')}
+function renderLibrary(){const q=document.getElementById('search').value.toLocaleLowerCase(),box=document.getElementById('words');box.replaceChildren();const matched=data.filter(x=>normalize(x.w).includes(q)||String(x.meaning||'').toLocaleLowerCase().includes(q)).sort((a,b)=>String(a.w).localeCompare(String(b.w)));if(!matched.length){box.textContent='找不到符合的單字';return}matched.forEach(x=>{const row=document.createElement('div');row.className='item';const strong=document.createElement('strong');strong.textContent=x.w;const sub=document.createElement('span');sub.textContent=x.meaning||'';row.append(strong,sub);row.onclick=()=>editWord(x.w);box.append(row)})}
+function editWord(word){const x=data.find(y=>normalize(y.w)===normalize(word));if(!x)return;show('add');editingKey=normalize(x.w);fields.forEach(k=>document.getElementById(k).value=x[k]||'')}
+function downloadJSON(items,filename){const blob=new Blob([JSON.stringify(items,null,2)],{type:'application/json;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+function backup(){downloadJSON(data,'vocabulary-backup-'+new Date().toISOString().slice(0,10)+'.json')}
+function readJSON(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>{try{resolve(JSON.parse(reader.result))}catch(e){reject(new Error('不是有效的 JSON 檔案'))}};reader.onerror=()=>reject(new Error('無法讀取檔案'));reader.readAsText(file)})}
+function validate(raw){if(!Array.isArray(raw))raw=raw&&raw.words;if(!Array.isArray(raw))throw new Error('JSON 必須是單字陣列或含 words 的備份');return raw.map((x,i)=>{if(!x||typeof x!=='object'||Array.isArray(x)||!normalize(x.w||x.word))throw new Error('第 '+(i+1)+' 筆缺少英文單字');const item={due:0};fields.forEach(k=>item[k]=typeof x[k]==='string'?x[k].trim():'');item.w=normalize(x.w||x.word);item.ex=String(x.ex||x.example||'').trim();return item})}
+async function importWords(event){const file=event.target.files&&event.target.files[0];if(!file)return;const status=document.getElementById('importStatus');try{const incoming=validate(await readJSON(file));const seen=new Set(data.map(x=>normalize(x.w)));let added=0,skipped=0;const additions=[];incoming.forEach(x=>{if(seen.has(x.w)){skipped++;return}seen.add(x.w);additions.push(x);added++});if(added){data.push(...additions);if(!persist()){data.splice(data.length-additions.length,additions.length);return}}status.textContent='匯入完成：新增 '+added+' 個，略過重複 '+skipped+' 個。';alert(status.textContent)}catch(e){status.textContent='匯入失敗：'+e.message;alert(status.textContent)}finally{event.target.value=''}}
+
+async function repairWords(event){
+ const file=event.target.files&&event.target.files[0];if(!file)return;
+ const status=document.getElementById('repairStatus');
+ try{
+  const parsed=await readJSON(file),raw=Array.isArray(parsed)?parsed:parsed&&parsed.words;
+  if(!Array.isArray(raw))throw new Error('備份 JSON 格式不正確');
+  const backup=raw.map(compatibleCard).filter(x=>normalize(x.w));
+  if(!backup.length)throw new Error('備份中沒有可用的英文單字');
+  let repaired=0,added=0,updated=0;
+  const used=new Set();
+  const snapshot=JSON.stringify(data);
+  for(const item of backup){
+   const key=normalize(item.w);
+   let current=data.find(x=>normalize(x.w||x.word)===key);
+   if(!current){
+    const candidates=data.filter(x=>!normalize(x.w||x.word)&&!used.has(x));
+    current=candidates.find(x=>x.meaning&&item.meaning&&x.meaning===item.meaning)
+      ||candidates.find(x=>x.root&&item.root&&x.root===item.root&&x.pos===item.pos&&x.collocation===item.collocation);
+   }
+   if(current){
+    used.add(current);
+    if(!normalize(current.w)||!String(current.ex||'').trim())repaired++;
+    const due=current.due,interval=current.interval,level=current.level;
+    for(const k of ['w','word','ex','example','pos','meaning','prefix','root','suffix','related','similar','collocation','tags']){
+      if(!String(current[k]||'').trim()&&String(item[k]||'').trim())current[k]=item[k];
+    }
+    current.w=key;current.word=key;
+    if(!current.ex)current.ex=item.ex;
+    if(!current.example)current.example=item.ex;
+    if(due!==undefined)current.due=due;
+    if(interval!==undefined)current.interval=interval;
+    if(level!==undefined)current.level=level;
+    updated++;
+   }else{data.push({...item,w:key,word:key,due:item.due||0});added++}
+  }
+  if(!persist()){data=JSON.parse(snapshot);return}
+  status.textContent='修復完成：補齊 '+repaired+' 張，新增 '+added+' 張，核對 '+updated+' 張。';
+  alert(status.textContent);show('home');
+ }catch(e){status.textContent='修復失敗：'+e.message;alert(status.textContent)}
+ finally{event.target.value=''}
+}
+
+async function restore(event){const file=event.target.files&&event.target.files[0];if(!file)return;try{const parsed=await readJSON(file);const raw=Array.isArray(parsed)?parsed:parsed&&parsed.words;if(!Array.isArray(raw)||!raw.every(x=>x&&normalize(x.w||x.word)))throw new Error('備份格式不正確');if(!confirm('這會取代目前全部單字與複習進度。確定要還原嗎？'))return;const old=data;data=raw.map(x=>compatibleCard({...x,w:normalize(x.w||x.word)}));if(!persist()){data=old;return}alert('還原完成，共 '+data.length+' 個單字');show('library')}catch(e){alert('還原失敗：'+e.message)}finally{event.target.value=''}}
+show('home');
+</script>
+</body>
+</html>
