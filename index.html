@@ -19,7 +19,7 @@
 <section id="library" class="hidden"><h2>我的單字庫</h2><input id="search" placeholder="搜尋英文或中文" oninput="renderLibrary()"><div class="panel" id="words"></div></section>
 <section id="add" class="hidden"><h2>新增／編輯單字</h2><form id="wordForm" onsubmit="saveWord(event)"><label>英文單字</label><input id="w" required><label>詞性</label><input id="pos" placeholder="verb / noun / adjective"><label>英文例句</label><textarea id="ex" required></textarea><label>中文意思</label><textarea id="meaning" required></textarea><label>字首</label><input id="prefix"><label>字根</label><input id="root"><label>字尾</label><input id="suffix"><label>延伸字詞</label><textarea id="related"></textarea><label>相似字詞</label><textarea id="similar"></textarea><label>常見搭配</label><textarea id="collocation"></textarea><button type="submit">儲存單字卡</button></form>
 <div class="panel"><h3>批次匯入 JSON</h3><p class="notice">匯入會新增尚未收錄的單字，重複單字會略過；不會清空舊單字或複習進度。</p><input id="importFile" type="file" accept=".json,application/json" onchange="importWords(event)"><p id="importStatus" aria-live="polite"></p></div>
-<div class="panel"><h3>備份與還原</h3><p class="muted">建議定期匯出完整備份。單字只儲存在目前這個瀏覽器／主畫面 App 中，沒有雲端同步。</p><button onclick="backup()">匯出完整 JSON 備份</button><p class="label">還原備份（會取代整個單字庫，請謹慎使用）</p><input id="restoreFile" type="file" accept=".json,application/json" onchange="restore(event)"></div>
+<div class="panel"><h3>修復缺少的單字與例句</h3><p class="notice">如果單字卡只顯示詞性，請選擇你之前下載的完整備份 JSON。程式會用中文意思等欄位比對並補回英文單字與例句，盡量保留目前的複習進度；不會刪除現有單字。</p><input id="repairFile" type="file" accept=".json,application/json" onchange="repairWords(event)"><p id="repairStatus" aria-live="polite"></p></div><div class="panel"><h3>備份與還原</h3><p class="muted">建議定期匯出完整備份。單字只儲存在目前這個瀏覽器／主畫面 App 中，沒有雲端同步。</p><button onclick="backup()">匯出完整 JSON 備份</button><p class="label">還原備份（會取代整個單字庫，請謹慎使用）</p><input id="restoreFile" type="file" accept=".json,application/json" onchange="restore(event)"></div>
 </section>
 </main>
 <nav><button onclick="show('home')">首頁</button><button onclick="show('review')">複習</button><button onclick="show('library')">單字庫</button><button onclick="show('add')">新增／匯入</button></nav>
@@ -37,7 +37,7 @@ try{const saved=localStorage.getItem(KEY);data=saved===null?starter.map(x=>({...
 if(!Array.isArray(data))data=starter.map(x=>({...x,due:0}));
 // Support both the original word/example backup format and the newer w/ex format.
 // Keep the original properties and review metadata intact.
-function compatibleCard(x){return {...x,w:String(x.w||x.word||'').trim(),ex:String(x.ex||x.example||'')}}
+function compatibleCard(x){const word=String(x.word||x.w||'').trim();const example=String(x.example||x.ex||'').trim();return {...x,w:word,ex:example,word,example}}
 data=data.map(compatibleCard);
 
 let queue=[],index=0,flipped=false,editingKey=null;
@@ -45,7 +45,7 @@ function persist(){try{localStorage.setItem(KEY,JSON.stringify(data));return tru
 function normalize(word){return String(word||'').trim().toLocaleLowerCase()}
 function show(id){document.querySelectorAll('main section').forEach(x=>x.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');if(id==='home'){document.getElementById('count').textContent='已收錄 '+data.length+' 個單字';document.getElementById('dueCount').textContent='目前待複習 '+data.filter(x=>(Number(x.due)||0)<=Date.now()).length+' 個單字'}if(id==='library')renderLibrary();if(id==='review')startReview();window.scrollTo(0,0)}
 function startReview(){queue=data.filter(x=>(Number(x.due)||0)<=Date.now());index=0;renderCard()}
-function renderCard(){const f=document.getElementById('front'),b=document.getElementById('back');flipped=false;f.classList.remove('hidden');b.classList.add('hidden');f.replaceChildren();b.replaceChildren();document.getElementById('progress').textContent=index<queue.length?'第 '+(index+1)+' / '+queue.length+' 張':'今天沒有更多待複習單字';document.getElementById('reviewActions').classList.toggle('hidden',index>=queue.length);if(index>=queue.length){f.textContent='今日複習完成！';return}const x=queue[index];const a=document.createElement('div');a.className='word';a.textContent=x.w;const p=document.createElement('small');p.textContent=x.pos||'';const e=document.createElement('div');e.className='example';e.textContent=x.ex||'';f.append(a,p,e);const content=document.createElement('div');content.className='answer';[['中文意思',x.meaning],['字首',x.prefix],['字根',x.root],['字尾',x.suffix],['延伸字詞',x.related],['相似字詞',x.similar],['常見搭配',x.collocation]].forEach(([label,value])=>{if(!value)return;const line=document.createElement('div'),strong=document.createElement('strong');strong.textContent=label+'：';line.append(strong,document.createTextNode(value));content.append(line)});b.append(content)}
+function renderCard(){const f=document.getElementById('front'),b=document.getElementById('back');flipped=false;f.classList.remove('hidden');b.classList.add('hidden');f.replaceChildren();b.replaceChildren();document.getElementById('progress').textContent=index<queue.length?'第 '+(index+1)+' / '+queue.length+' 張':'今天沒有更多待複習單字';document.getElementById('reviewActions').classList.toggle('hidden',index>=queue.length);if(index>=queue.length){f.textContent='今日複習完成！';return}const x=compatibleCard(queue[index]);const a=document.createElement('div');a.className='word';a.textContent=x.w;const p=document.createElement('small');p.textContent=x.pos||'';const e=document.createElement('div');e.className='example';e.textContent=x.ex||'';f.append(a,p,e);const content=document.createElement('div');content.className='answer';[['中文意思',x.meaning],['字首',x.prefix],['字根',x.root],['字尾',x.suffix],['延伸字詞',x.related],['相似字詞',x.similar],['常見搭配',x.collocation]].forEach(([label,value])=>{if(!value)return;const line=document.createElement('div'),strong=document.createElement('strong');strong.textContent=label+'：';line.append(strong,document.createTextNode(value));content.append(line)});b.append(content)}
 function flip(){if(index>=queue.length)return;flipped=!flipped;document.getElementById('front').classList.toggle('hidden',flipped);document.getElementById('back').classList.toggle('hidden',!flipped);document.getElementById('reviewActions').classList.toggle('hidden',flipped)}
 function rate(days){if(index>=queue.length)return;const x=queue[index],original=data.find(y=>normalize(y.w)===normalize(x.w));if(original)original.due=Date.now()+days*86400000;persist();index++;renderCard()}
 function saveWord(event){event.preventDefault();const x={due:0};fields.forEach(k=>x[k]=document.getElementById(k).value.trim());x.w=normalize(x.w);const existing=data.find(y=>normalize(y.w)===normalize(editingKey||x.w));if(existing){x.due=Number(existing.due)||0;Object.assign(existing,x,{word:x.w,example:x.ex})}else data.push(x);if(!persist())return;editingKey=null;event.target.reset();show('library')}
@@ -56,6 +56,49 @@ function backup(){downloadJSON(data,'vocabulary-backup-'+new Date().toISOString(
 function readJSON(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>{try{resolve(JSON.parse(reader.result))}catch(e){reject(new Error('不是有效的 JSON 檔案'))}};reader.onerror=()=>reject(new Error('無法讀取檔案'));reader.readAsText(file)})}
 function validate(raw){if(!Array.isArray(raw))raw=raw&&raw.words;if(!Array.isArray(raw))throw new Error('JSON 必須是單字陣列或含 words 的備份');return raw.map((x,i)=>{if(!x||typeof x!=='object'||Array.isArray(x)||!normalize(x.w||x.word))throw new Error('第 '+(i+1)+' 筆缺少英文單字');const item={due:0};fields.forEach(k=>item[k]=typeof x[k]==='string'?x[k].trim():'');item.w=normalize(x.w||x.word);item.ex=String(x.ex||x.example||'').trim();return item})}
 async function importWords(event){const file=event.target.files&&event.target.files[0];if(!file)return;const status=document.getElementById('importStatus');try{const incoming=validate(await readJSON(file));const seen=new Set(data.map(x=>normalize(x.w)));let added=0,skipped=0;const additions=[];incoming.forEach(x=>{if(seen.has(x.w)){skipped++;return}seen.add(x.w);additions.push(x);added++});if(added){data.push(...additions);if(!persist()){data.splice(data.length-additions.length,additions.length);return}}status.textContent='匯入完成：新增 '+added+' 個，略過重複 '+skipped+' 個。';alert(status.textContent)}catch(e){status.textContent='匯入失敗：'+e.message;alert(status.textContent)}finally{event.target.value=''}}
+
+async function repairWords(event){
+ const file=event.target.files&&event.target.files[0];if(!file)return;
+ const status=document.getElementById('repairStatus');
+ try{
+  const parsed=await readJSON(file),raw=Array.isArray(parsed)?parsed:parsed&&parsed.words;
+  if(!Array.isArray(raw))throw new Error('備份 JSON 格式不正確');
+  const backup=raw.map(compatibleCard).filter(x=>normalize(x.w));
+  if(!backup.length)throw new Error('備份中沒有可用的英文單字');
+  let repaired=0,added=0,updated=0;
+  const used=new Set();
+  const snapshot=JSON.stringify(data);
+  for(const item of backup){
+   const key=normalize(item.w);
+   let current=data.find(x=>normalize(x.w||x.word)===key);
+   if(!current){
+    const candidates=data.filter(x=>!normalize(x.w||x.word)&&!used.has(x));
+    current=candidates.find(x=>x.meaning&&item.meaning&&x.meaning===item.meaning)
+      ||candidates.find(x=>x.root&&item.root&&x.root===item.root&&x.pos===item.pos&&x.collocation===item.collocation);
+   }
+   if(current){
+    used.add(current);
+    if(!normalize(current.w)||!String(current.ex||'').trim())repaired++;
+    const due=current.due,interval=current.interval,level=current.level;
+    for(const k of ['w','word','ex','example','pos','meaning','prefix','root','suffix','related','similar','collocation','tags']){
+      if(!String(current[k]||'').trim()&&String(item[k]||'').trim())current[k]=item[k];
+    }
+    current.w=key;current.word=key;
+    if(!current.ex)current.ex=item.ex;
+    if(!current.example)current.example=item.ex;
+    if(due!==undefined)current.due=due;
+    if(interval!==undefined)current.interval=interval;
+    if(level!==undefined)current.level=level;
+    updated++;
+   }else{data.push({...item,w:key,word:key,due:item.due||0});added++}
+  }
+  if(!persist()){data=JSON.parse(snapshot);return}
+  status.textContent='修復完成：補齊 '+repaired+' 張，新增 '+added+' 張，核對 '+updated+' 張。';
+  alert(status.textContent);show('home');
+ }catch(e){status.textContent='修復失敗：'+e.message;alert(status.textContent)}
+ finally{event.target.value=''}
+}
+
 async function restore(event){const file=event.target.files&&event.target.files[0];if(!file)return;try{const parsed=await readJSON(file);const raw=Array.isArray(parsed)?parsed:parsed&&parsed.words;if(!Array.isArray(raw)||!raw.every(x=>x&&normalize(x.w||x.word)))throw new Error('備份格式不正確');if(!confirm('這會取代目前全部單字與複習進度。確定要還原嗎？'))return;const old=data;data=raw.map(x=>compatibleCard({...x,w:normalize(x.w||x.word)}));if(!persist()){data=old;return}alert('還原完成，共 '+data.length+' 個單字');show('library')}catch(e){alert('還原失敗：'+e.message)}finally{event.target.value=''}}
 show('home');
 </script>
