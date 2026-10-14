@@ -217,11 +217,7 @@ function renderWordRows(items,box,keepOrder=false){
   box.append(row);
  });
 }
-function renderWordRows(items,box){
- const matched=items.slice().sort((a,b)=>String(a.w).localeCompare(String(b.w)));
- if(!matched.length){box.textContent='找不到符合的單字';return}
- matched.forEach(x=>{const row=document.createElement('div');row.className='item';const strong=document.createElement('strong');strong.textContent=x.w;const sub=document.createElement('span');sub.textContent=x.meaning||'';row.append(strong,sub);row.onclick=()=>editWord(x.w);box.append(row)});
-}
+
 function editWord(word){const x=data.find(y=>normalize(y.w)===normalize(word));if(!x)return;show('add');editingKey=normalize(x.w);setEditMode(true);fields.forEach(k=>document.getElementById(k).value=x[k]||'');document.getElementById('wordSaveStatus').textContent='';autoGrow(document.getElementById('note'))}
 function setEditMode(isEditing){document.getElementById('backToLibrary').classList.toggle('hidden',!isEditing);document.getElementById('addTitle').textContent=isEditing?'編輯單字':'新增／編輯單字';document.querySelectorAll('[data-import-panel]').forEach(x=>x.classList.toggle('hidden',isEditing))}
 function backToLibrary(){editingKey=null;document.getElementById('wordForm').reset();setEditMode(false);show('library')}
