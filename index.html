@@ -17,14 +17,14 @@
 </section>
 <section id="review" class="hidden"><h2>單字複習</h2><p id="progress" class="muted"></p><div class="card" onclick="flip()"><div id="front"></div><div id="back" class="hidden"></div><small>點擊卡片翻面</small></div><div class="row" id="reviewActions"><button class="secondary" onclick="rate(1)">忘記了</button><button class="secondary" onclick="rate(3)">有點印象</button><button onclick="rate(7)">記得</button></div><div class="panel hidden" id="reviewNotePanel"><label for="reviewNote"><strong>備註</strong></label><textarea id="reviewNote" placeholder="記錄這個單字的用法、容易忘記的地方"></textarea><button type="button" onclick="saveReviewNote()">儲存備註</button><p id="reviewNoteStatus" class="muted" aria-live="polite"></p></div>
 </section>
-<section id="library" class="hidden"><h2>我的單字庫</h2><input id="search" placeholder="搜尋英文或中文" oninput="renderLibrary()"><div class="panel" id="words"></div></section>
+<section id="library" class="hidden"><h2>我的單字庫</h2><button id="backToCategories" type="button" class="secondary hidden" onclick="openCategory(null)">← 返回詞性分類</button><p id="categoryHeading" class="muted"></p><input id="search" placeholder="搜尋英文或中文" oninput="renderLibrary()"><div class="panel" id="words"></div></section>
 <section id="add" class="hidden"><button id="backToLibrary" class="secondary hidden" type="button" onclick="backToLibrary()">← 返回單字庫</button><h2 id="addTitle">新增／編輯單字</h2><form id="wordForm" onsubmit="saveWord(event)"><label>英文單字</label><input id="w" required><label>詞性</label><input id="pos" placeholder="verb / noun / adjective"><label>英文例句</label><textarea id="ex" required></textarea><label>中文意思</label><textarea id="meaning" required></textarea><label>字首</label><input id="prefix"><label>字根</label><input id="root"><label>字尾</label><input id="suffix"><label>延伸字詞</label><textarea id="related"></textarea><label>相似字詞</label><textarea id="similar"></textarea><label>常見搭配</label><textarea id="collocation"></textarea><label>備註</label><textarea id="note" placeholder="記錄你的學習心得、容易混淆的用法等"></textarea><button type="submit">儲存單字卡</button><p id="wordSaveStatus" class="muted" aria-live="polite"></p></form>
 <div class="panel" data-import-panel><h3>批次匯入 JSON</h3><p class="notice">匯入會新增尚未收錄的單字，重複單字會略過；不會清空舊單字或複習進度。</p><input id="importFile" type="file" accept=".json,application/json" onchange="importWords(event)"><p id="importStatus" aria-live="polite"></p></div>
 <div class="panel" data-import-panel><h3>修復缺少的單字與例句</h3><p class="notice">如果單字卡只顯示詞性，請選擇你之前下載的完整備份 JSON。程式會用中文意思等欄位比對並補回英文單字與例句，盡量保留目前的複習進度；不會刪除現有單字。</p><input id="repairFile" type="file" accept=".json,application/json" onchange="repairWords(event)"><p id="repairStatus" aria-live="polite"></p></div><div class="panel" data-import-panel><h3>備份與還原</h3><p class="muted">建議定期匯出完整備份。單字只儲存在目前這個瀏覽器／主畫面 App 中，沒有雲端同步。</p><button onclick="backup()">匯出完整 JSON 備份</button><p class="label">還原備份（會取代整個單字庫，請謹慎使用）</p><input id="restoreFile" type="file" accept=".json,application/json" onchange="restore(event)"></div>
 </section>
 
 </main>
-<nav><button onclick="show('home')">首頁</button><button onclick="show('review')">複習</button><button onclick="show('library')">單字庫</button><button onclick="show('add')">新增／匯入</button></nav>
+<nav><button onclick="show('home')">首頁</button><button onclick="show('review')">複習</button><button onclick="openCategory(null);show('library')">單字庫</button><button onclick="show('add')">新增／匯入</button></nav>
 <script>
 'use strict';
 const KEY='my-vocabulary-v1';
@@ -42,7 +42,7 @@ if(!Array.isArray(data))data=starter.map(x=>({...x,due:0}));
 function compatibleCard(x){const word=String(x.word||x.w||'').trim();const example=String(x.example||x.ex||'').trim();return {...x,w:word,ex:example,word,example}}
 data=data.map(compatibleCard);
 
-let queue=[],index=0,flipped=false,editingKey=null;
+let queue=[],index=0,flipped=false,editingKey=null,activeCategory=null;
 function persist(){try{localStorage.setItem(KEY,JSON.stringify(data));return true}catch(e){alert('儲存失敗：請檢查瀏覽器儲存空間，並先備份資料。');return false}}
 function autoGrow(el){if(!el)return;el.style.height='auto';el.style.height=Math.max(el.scrollHeight,90)+'px'}
 ['note','reviewNote'].forEach(id=>{const el=document.getElementById(id);el.addEventListener('input',()=>autoGrow(el));});
@@ -54,7 +54,65 @@ function flip(){if(index>=queue.length)return;flipped=!flipped;document.getEleme
 function saveReviewNote(){if(index>=queue.length)return;const x=queue[index];const original=data.find(y=>y===x)||data.find(y=>normalize(y.w)===normalize(x.w));if(!original)return;const old=original.note;original.note=document.getElementById('reviewNote').value.trim();if(!persist()){original.note=old;return}document.getElementById('reviewNoteStatus').textContent='備註已儲存';if(flipped){const b=document.getElementById('back');const lines=b.querySelectorAll('.answer div');const noteLine=Array.from(lines).find(el=>el.querySelector('strong')?.textContent==='備註：');if(noteLine)noteLine.remove();if(original.note){const line=document.createElement('div'),strong=document.createElement('strong');strong.textContent='備註：';line.append(strong,document.createTextNode(original.note));b.querySelector('.answer').append(line)}}}
 function rate(days){if(index>=queue.length)return;const x=queue[index],original=data.find(y=>normalize(y.w)===normalize(x.w));if(original)original.due=Date.now()+days*86400000;persist();index++;renderCard()}
 function saveWord(event){event.preventDefault();const x={due:0};fields.forEach(k=>x[k]=document.getElementById(k).value.trim());x.w=normalize(x.w);const existing=data.find(y=>normalize(y.w)===normalize(editingKey||x.w));if(existing){x.due=Number(existing.due)||0;Object.assign(existing,x,{word:x.w,example:x.ex})}else data.push(x);if(!persist())return;editingKey=normalize(x.w);document.getElementById('wordSaveStatus').textContent='單字已儲存';}
-function renderLibrary(){const q=document.getElementById('search').value.toLocaleLowerCase(),box=document.getElementById('words');box.replaceChildren();const matched=data.filter(x=>normalize(x.w).includes(q)||String(x.meaning||'').toLocaleLowerCase().includes(q)).sort((a,b)=>String(a.w).localeCompare(String(b.w)));if(!matched.length){box.textContent='找不到符合的單字';return}matched.forEach(x=>{const row=document.createElement('div');row.className='item';const strong=document.createElement('strong');strong.textContent=x.w;const sub=document.createElement('span');sub.textContent=x.meaning||'';row.append(strong,sub);row.onclick=()=>editWord(x.w);box.append(row)})}
+const posGroups=[
+ {id:'noun',label:'名詞',short:'n.'},
+ {id:'verb',label:'動詞',short:'v.'},
+ {id:'adjective',label:'形容詞',short:'adj.'},
+ {id:'adverb',label:'副詞',short:'adv.'},
+ {id:'pronoun',label:'代名詞',short:'pron.'},
+ {id:'preposition',label:'介系詞',short:'prep.'},
+ {id:'conjunction',label:'連接詞',short:'conj.'},
+ {id:'interjection',label:'感嘆詞',short:'interj.'},
+ {id:'other',label:'其他／未分類',short:'—'}
+];
+function wordCategories(x){
+ const pos=String(x.pos||'').toLowerCase();
+ const found=new Set();
+ const tests=[
+  ['noun',/(?:\bnouns?\b|\bn\.|名詞)/],
+  ['verb',/(?:\bverbs?\b|\bv\.|動詞)/],
+  ['adjective',/(?:\badjectives?\b|\badj\.?\b|形容詞)/],
+  ['adverb',/(?:\badverbs?\b|\badv\.?\b|副詞)/],
+  ['pronoun',/(?:\bpronouns?\b|\bpron\.?\b|代名詞)/],
+  ['preposition',/(?:\bprepositions?\b|\bprep\.?\b|介系詞)/],
+  ['conjunction',/(?:\bconjunctions?\b|\bconj\.?\b|連接詞)/],
+  ['interjection',/(?:\binterjections?\b|\binterj\.?\b|感嘆詞)/]
+ ];
+ tests.forEach(([key,re])=>{if(re.test(pos))found.add(key)});
+ if(!found.size)found.add('other');
+ return [...found];
+}
+function openCategory(id){activeCategory=id;document.getElementById('search').value='';renderLibrary();}
+function renderLibrary(){
+ const q=document.getElementById('search').value.trim().toLocaleLowerCase();
+ const box=document.getElementById('words');box.replaceChildren();
+ const heading=document.getElementById('categoryHeading');
+ const back=document.getElementById('backToCategories');
+ back.classList.toggle('hidden',activeCategory===null);
+ if(activeCategory===null){
+  heading.textContent='依詞性分類，選擇後查看單字';
+  const counts=posGroups.map(g=>({...g,count:data.filter(x=>wordCategories(x).includes(g.id)).length}));
+  counts.forEach(g=>{
+   const row=document.createElement('div');row.className='item';row.setAttribute('role','button');row.tabIndex=0;
+   const strong=document.createElement('strong');strong.textContent=g.label+' · '+g.short;
+   const sub=document.createElement('span');sub.className='muted';sub.textContent=g.count+' 個單字  →';
+   row.append(strong,sub);row.onclick=()=>openCategory(g.id);
+   row.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openCategory(g.id)}};
+   box.append(row);
+  });
+  if(q){heading.textContent='搜尋結果';box.replaceChildren();renderWordRows(data.filter(x=>normalize(x.w).includes(q)||String(x.meaning||'').toLocaleLowerCase().includes(q)),box)}
+  return;
+ }
+ const group=posGroups.find(g=>g.id===activeCategory);
+ heading.textContent=(group?group.label:'單字')+' · '+data.filter(x=>wordCategories(x).includes(activeCategory)).length+' 個單字';
+ const matched=data.filter(x=>wordCategories(x).includes(activeCategory)&&(normalize(x.w).includes(q)||String(x.meaning||'').toLocaleLowerCase().includes(q)));
+ renderWordRows(matched,box);
+}
+function renderWordRows(items,box){
+ const matched=items.slice().sort((a,b)=>String(a.w).localeCompare(String(b.w)));
+ if(!matched.length){box.textContent='找不到符合的單字';return}
+ matched.forEach(x=>{const row=document.createElement('div');row.className='item';const strong=document.createElement('strong');strong.textContent=x.w;const sub=document.createElement('span');sub.textContent=x.meaning||'';row.append(strong,sub);row.onclick=()=>editWord(x.w);box.append(row)});
+}
 function editWord(word){const x=data.find(y=>normalize(y.w)===normalize(word));if(!x)return;show('add');editingKey=normalize(x.w);setEditMode(true);fields.forEach(k=>document.getElementById(k).value=x[k]||'');document.getElementById('wordSaveStatus').textContent='';autoGrow(document.getElementById('note'))}
 function setEditMode(isEditing){document.getElementById('backToLibrary').classList.toggle('hidden',!isEditing);document.getElementById('addTitle').textContent=isEditing?'編輯單字':'新增／編輯單字';document.querySelectorAll('[data-import-panel]').forEach(x=>x.classList.toggle('hidden',isEditing))}
 function backToLibrary(){editingKey=null;document.getElementById('wordForm').reset();setEditMode(false);show('library')}
