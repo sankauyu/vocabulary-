@@ -95,7 +95,7 @@ function renderLibrary(){
   counts.forEach(g=>{
    const row=document.createElement('div');row.className='item';row.setAttribute('role','button');row.tabIndex=0;
    const strong=document.createElement('strong');strong.textContent=g.label+' · '+g.short;
-   const sub=document.createElement('span');sub.className='muted';sub.textContent=g.count+' 個單字  →';
+   const sub=document.createElement('span');sub.className='muted';sub.textContent=g.count+' 個單字';
    row.append(strong,sub);row.onclick=()=>openCategory(g.id);
    row.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openCategory(g.id)}};
    box.append(row);
